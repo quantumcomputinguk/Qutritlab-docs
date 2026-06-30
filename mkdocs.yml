@@ -2,7 +2,7 @@ site_name: QutritLab Documentation
 site_description: Qutrit quantum circuit simulator
 
 theme:
-  name: material
+  name: readthedocs
 
 plugins:
   - search

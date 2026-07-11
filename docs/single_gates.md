@@ -36,8 +36,28 @@
 <img src="../images/Z12.svg" width="170">
 
 ::: qutritlab.RX
+<h2>Matrix Representation</h2>
+<img src="../images/RX_full.png" width="170">
+<br>
+<h2>Subspace variants</h2>
+<img src="../images/RX_01.png" width="170">
+<img src="../images/RX_02.png" width="170">
+<img src="../images/RX_12.png" width="170">
 
 ::: qutritlab.RY
+<h2>Matrix Representation</h2>
+<img src="../images/RY_full.png" width="170">
+<br>
+<h2>Subspace variants</h2>
+<img src="../images/RY_01.png" width="170">
+<img src="../images/RY_02.png" width="170">
+<img src="../images/RY_12.png" width="170">
 
 ::: qutritlab.RZ
-
+<h2>Matrix Representation</h2>
+<img src="../images/RY_full.png" width="170">
+<br>
+<h2>Subspace variants</h2>
+<img src="../images/RZ_01.png" width="170">
+<img src="../images/RZ_02.png" width="170">
+<img src="../images/RZ_12.png" width="170">

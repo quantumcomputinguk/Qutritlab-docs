@@ -46,7 +46,7 @@
 
 ::: qutritlab.RY
 <h2>Matrix Representation</h2>
-<img src="../images/RY_full.png" width="500">
+<img src="../images/RY_full.png">
 <br>
 <h2>Subspace variants</h2>
 <img src="../images/RY_01.png" width="170">

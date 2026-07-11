@@ -37,12 +37,12 @@
 
 ::: qutritlab.RX
 <h2>Matrix Representation</h2>
-<img src="../images/RX_full.png" width="170">
+<img src="../images/RX_full.png" width="200">
 <br>
 <h2>Subspace variants</h2>
-<img src="../images/RX_01.png" width="170">
-<img src="../images/RX_02.png" width="170">
-<img src="../images/RX_12.png" width="170">
+<img src="../images/RX_01.png" width="200">
+<img src="../images/RX_02.png" width="200">
+<img src="../images/RX_12.png" width="200">
 
 ::: qutritlab.RY
 <h2>Matrix Representation</h2>

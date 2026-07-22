@@ -1,10 +1,10 @@
 ::: qutritlab.Gate
     options:
-	show_source: false
+      show_source: false
 
 ::: qutritlab.H
     options:
-	show_source: false
+      show_source: false
 
 <h2>Matrix Representation</h2>
 <img src="../images/H_Ternary.png" width="220">

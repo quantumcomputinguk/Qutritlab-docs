@@ -110,6 +110,7 @@ class H(Gate):
     - If no subspace is provided:
         Applies a full qutrit Hadamard gate, creating superposition over |0>, |1>, |2>.
         
+
     - If subspace=(i,j):
         applies a qubit Hadamard on that 2D subspace and leaves the third level unchanged.
 
@@ -126,6 +127,7 @@ class H(Gate):
         print("Probabilities:", results.probabilities)
         print("Measurements:", results.measurements)
     """
+    
     num_qutrits = 1
 
     def __init__(self, subspace=None):
@@ -186,8 +188,9 @@ class SHIFT(Gate):
     Ternary Shift gate. 
 
     Behavior:
-        This gate performs a cyclic permutation of the basis states: |0⟩ → |1⟩, |1⟩ → |2⟩, |2⟩ → |0⟩
+        This gate performs a cyclic permutation of the basis states: |0⟩ → |2⟩, |1⟩ → |0⟩, |2⟩ → |1⟩
     
+        
     Example:
 
         from qutritlab import *
@@ -383,39 +386,32 @@ class RX(Gate):
             self.subspace = None
 
     def matrix(self):
-        # --- Case 1: Full ternary RX ---
-        if self.subspace is None:
-            lam = self.lam
-            return np.array([
-                [(1+2*np.cos(lam))/3,
-                 (-1j*np.sin(lam) + (1-np.cos(lam)))/3,
-                 (-1j*np.sin(lam) + (1-np.cos(lam)))/3],
-
-                [(-1j*np.sin(lam) + (1-np.cos(lam)))/3,
-                 (1+2*np.cos(lam))/3,
-                 (-1j*np.sin(lam) + (1-np.cos(lam)))/3],
-
-                [(-1j*np.sin(lam) + (1-np.cos(lam)))/3,
-                 (-1j*np.sin(lam) + (1-np.cos(lam)))/3,
-                 (1+2*np.cos(lam))/3]
-            ], dtype=complex)
-
-        # --- Case 2: Subspace RX (embedded qubit rotation) ---
-        i, j = self.subspace
         lam = self.lam
 
-        M = np.eye(3, dtype=complex)
+        # --- Case 1: Full ternary RX ---
+        if self.subspace is None:
+            alpha = lam / np.sqrt(3)
 
-        # zero out the 2x2 block
-        M[i, i] = 0
-        M[j, j] = 0
-        M[i, j] = 0
-        M[j, i] = 0
+            d = (2 * np.exp(1j * alpha)
+             + np.exp(-2j * alpha)) / 3
+
+            o = (np.exp(-2j * alpha)
+             - np.exp(1j * alpha)) / 3
+
+            return np.array([
+                [d, o, o],
+                [o, d, o],
+                [o, o, d]
+            ], dtype=complex)
+
+        # --- Case 2: Subspace RX ---
+        i, j = self.subspace
+
+        M = np.eye(3, dtype=complex)
 
         c = np.cos(lam / 2)
         s = -1j * np.sin(lam / 2)
 
-        # insert RX block
         M[i, i] = c
         M[j, j] = c
         M[i, j] = s
@@ -474,13 +470,17 @@ class RY(Gate):
             c = np.cos(lam)
             s = np.sin(lam)
 
-            return np.array([
-                [(1 + 2*c)/3, (-s + (1-c))/3, ( s + (1-c))/3],
-                [( s + (1-c))/3, (1 + 2*c)/3, (-s + (1-c))/3],
-                [(-s + (1-c))/3, ( s + (1-c))/3, (1 + 2*c)/3]
-            ], dtype=complex)
+            a = (1 + 2 * c) / 3
+            b_minus = (1 - c) / 3 - s / np.sqrt(3)
+            b_plus  = (1 - c) / 3 + s / np.sqrt(3)
 
-        # --- Case 2: Subspace RY (embedded qubit rotation) ---
+            return np.array([
+            [a,       b_minus, b_plus ],
+            [b_plus,  a,       b_minus],
+            [b_minus, b_plus,  a      ]
+        ], dtype=complex)
+
+        # --- Case 2: Subspace RY ---
         i, j = self.subspace
 
         M = np.eye(3, dtype=complex)
@@ -488,13 +488,6 @@ class RY(Gate):
         c = np.cos(lam / 2)
         s = np.sin(lam / 2)
 
-        # zero out 2x2 block
-        M[i, i] = 0
-        M[j, j] = 0
-        M[i, j] = 0
-        M[j, i] = 0
-
-        # insert RY block
         M[i, i] = c
         M[i, j] = -s
         M[j, i] = s
@@ -591,7 +584,7 @@ class CP(Gate):
         c.add_operation(gate=CP(2*np.pi/3), controls=[0], targets=[1])
         c.add_operation(gate=H(), targets=[1])
 
-        esults = Simulator().run(c, shots=1000, ternary_string=True)
+        results = Simulator().run(c, shots=1000, ternary_string=True)
 
         print("State:", results.state)
         print("Probabilities:", results.probabilities)
@@ -1402,32 +1395,71 @@ def to_ternary_padded(x, n):
         x //= 3
     return ''.join(reversed(trits)).zfill(n)
 
-
-def get_measurements(state, shots=1000, ternary_string=False, binary_string=False):
+def get_measurements(
+    state,
+    shots=1000,
+    ternary_string=False,
+    binary_string=False,
+    indices=None
+):
     probs = get_probabilities(state)
     samples = np.random.choice(len(probs), p=probs, size=shots)
 
-    n_qutrits = round(math.log(len(probs), 3))  # assumes full 3^n space
+    n_qutrits = round(math.log(len(probs), 3))
 
-    counts = Counter(samples)
+    # Convert sampled basis states into ternary strings
+    ternary_samples = [
+        to_ternary_padded(sample, n_qutrits)
+        for sample in samples
+    ]
+
+    # If specific qutrits are requested, keep only those digits
+    if indices is not None:
+        ternary_samples = [
+            ''.join(state_str[n_qutrits - 1 - i] for i in indices)
+            for state_str in ternary_samples
+        ]
+
+    counts = Counter(ternary_samples)
 
     if ternary_string:
-        counts = {
-            to_ternary_padded(i, n_qutrits): c
-            for i, c in counts.items()
-        }
         return sorted(counts.items(), key=lambda x: int(x[0], 3))
 
     elif binary_string:
-        # keeping your structure but fixing it
         binary_counts = {
-            format(i, f"0{n_qutrits}b"): c
-            for i, c in counts.items()
+            format(int(k, 3), f"0{len(k)}b"): v
+            for k, v in counts.items()
         }
         return sorted(binary_counts.items(), key=lambda x: int(x[0], 2))
 
     else:
         return dict(counts)
+    
+# def get_measurements(state, shots=1000, ternary_string=False, binary_string=False):
+#     probs = get_probabilities(state)
+#     samples = np.random.choice(len(probs), p=probs, size=shots)
+
+#     n_qutrits = round(math.log(len(probs), 3))  # assumes full 3^n space
+
+#     counts = Counter(samples)
+
+#     if ternary_string:
+#         counts = {
+#             to_ternary_padded(i, n_qutrits): c
+#             for i, c in counts.items()
+#         }
+#         return sorted(counts.items(), key=lambda x: int(x[0], 3))
+
+#     elif binary_string:
+#         # keeping your structure but fixing it
+#         binary_counts = {
+#             format(i, f"0{n_qutrits}b"): c
+#             for i, c in counts.items()
+#         }
+#         return sorted(binary_counts.items(), key=lambda x: int(x[0], 2))
+
+#     else:
+#         return dict(counts)
     
 def _ternary (n):
     if n == 0:
